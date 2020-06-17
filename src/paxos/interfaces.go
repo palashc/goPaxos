@@ -1,13 +1,13 @@
 package paxos
 
-type Proposer interface {
+type ProposerInterface interface {
 	KV
 }
 
-type Acceptor interface {
+type AcceptorInterface interface {
 }
 
-type Learner interface {
+type LearnerInterface interface {
 }
 
 type KV interface {

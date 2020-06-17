@@ -3,17 +3,31 @@ package proposer
 import (
 	"fmt"
 	"paxos"
+	"paxos/types"
 	"sync"
-	"types"
 )
+
+const MAX_RETRY = 3
 
 type Proposer struct {
 	currProposalNum int
 	value           string
 	addr            string
-	acceptors       []paxos.Acceptor
+	acceptors       []paxos.AcceptorInterface
 	numProposers    int
 	lock            sync.Mutex
+}
+
+func NewProposer(id int, addr string, acceptors []paxos.AcceptorInterface, numProposers int) *Proposer {
+
+	p := &Proposer{
+		currProposalNum: id,
+		addr:            addr,
+		acceptors:       acceptors,
+		numProposers:    numProposers,
+	}
+
+	return p
 }
 
 func (p *Proposer) Set(value string, ret *bool) error {
@@ -22,7 +36,7 @@ func (p *Proposer) Set(value string, ret *bool) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	err = p.doConsensus(value)
+	err := p.doConsensus(value, 0)
 	if err != nil {
 		fmt.Println("[Proposer:Set] Could not achieve consensus")
 		*ret = false
@@ -39,17 +53,21 @@ func (p *Proposer) Get(key string, value *string) error {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	*value = v
+	*value = p.value
 	return nil
 }
 
-func (p *Proposer) doConsensus(value string) error {
+func (p *Proposer) doConsensus(value string, retry int) error {
 
-	prepareReq := types.PrepareRequest{p.getNextProposalNumber(), valueStr}
+	if retry == MAX_RETRY {
+		return fmt.Errorf("Too many retries")
+	}
+
+	prepareReq := types.PrepareRequest{p.getNextProposalNumber(), value}
 	nPromises := 0
 
 	// Phase-1: PREPARE
-	for _, acceptor := range acceptors {
+	for _, acceptor := range p.acceptors {
 		var prepareRes types.PrepareResponse
 		var proposalNum int
 		err := acceptor.Prepare(prepareReq, &prepareRes)
@@ -71,20 +89,20 @@ func (p *Proposer) doConsensus(value string) error {
 		acceptReq := types.AcceptRequest{prepareReq.N, value}
 		var acceptRes types.AcceptResponse
 		var nAccepts int
-		for _, acceptor := range acceptors {
-			err = acceptor.Accept(acceptReq, &acceptRes)
+		for _, acceptor := range p.acceptors {
+			err := acceptor.Accept(acceptReq, &acceptRes)
 			if err == nil && acceptRes.Status {
 				nAccepts++
 			}
 		}
 	} else {
-
+		p.doConsensus(value, retry+1)
 	}
-
+	return nil
 }
 
 func (p *Proposer) getNextProposalNumber() int {
 	pNum := p.currProposalNum
-	p.currProposalNum += numProposers
+	p.currProposalNum += p.numProposers
 	return pNum
 }
