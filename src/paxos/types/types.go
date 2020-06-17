@@ -5,10 +5,15 @@ type PrepareRequest struct {
 	V string
 }
 
+type Proposal struct {
+	N int
+	V string
+}
+
 type PrepareResponse struct {
 	Status       bool
 	PrevAccepted bool
-	Proposal     PrepareRequest
+	Proposal     Proposal
 }
 
 type AcceptRequest struct {
