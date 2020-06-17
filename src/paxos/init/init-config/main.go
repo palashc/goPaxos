@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	nProposers = flag.Int("np", 4, "number of proposers")
-	nAcceptors = flag.Int("na", 1, "number of acceptors")
+	nProposers = flag.Int("np", 2, "number of proposers")
+	nAcceptors = flag.Int("na", 3, "number of acceptors")
 	nLearners  = flag.Int("nl", 1, "number of learners")
 	nFrontends = flag.Int("nf", 1, "number of frontends")
 	frc        = flag.String("config", config.DefaultConfigPath, "paxos config file")
@@ -34,6 +34,12 @@ func main() {
 		for i := 0; i < *nProposers; i++ {
 			host := fmt.Sprintf("%s", ipAddrs[i%nMachine])
 			paxosConfig.Proposers[i] = fmt.Sprintf("%s:%d", host, p)
+			p++
+		}
+
+		for i := 0; i < *nAcceptors; i++ {
+			host := fmt.Sprintf("%s", ipAddrs[i%nMachine])
+			paxosConfig.Acceptors[i] = fmt.Sprintf("%s:%d", host, p)
 			p++
 		}
 	}

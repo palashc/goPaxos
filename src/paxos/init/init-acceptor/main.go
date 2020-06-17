@@ -4,10 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"paxos"
 	"paxos/acceptor"
 	"paxos/config"
-	"paxos/proposer"
 )
 
 var frc = flag.String("conf", config.DefaultConfigPath, "config file")
@@ -27,27 +25,22 @@ func main() {
 	rc, e := config.LoadConfig(*frc)
 	noError(e)
 
-	acceptorClients := []paxos.AcceptorInterface{}
-	for _, acceptorAddr := range rc.Acceptors {
-		acceptorClients = append(acceptorClients, acceptor.GetNewAcceptorClient(acceptorAddr))
-	}
-
 	run := func(i int) {
-		if i > len(rc.Proposers) {
+		if i > len(rc.Acceptors) {
 			noError(fmt.Errorf("index out of range: %d", i))
 		}
 
-		pAddr := rc.Proposers[i]
-		pConfig := rc.NewProposerConfig(i, proposer.NewProposer(i, pAddr, acceptorClients, len(rc.Proposers)))
+		aAddr := rc.Acceptors[i]
+		aConfig := rc.NewAcceptorConfig(i, acceptor.NewAcceptor(i, aAddr))
 
-		log.Printf("monitor serving on %s", pConfig.Addr)
+		log.Printf("monitor serving on %s", aConfig.Addr)
 
-		noError(proposer.Serve(pConfig))
+		noError(acceptor.Serve(aConfig))
 	}
 
 	// run all monitors
 	if *pid == -1 {
-		for i, _ := range rc.Proposers {
+		for i, _ := range rc.Acceptors {
 			go run(i)
 		}
 	} else {
