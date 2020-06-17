@@ -57,6 +57,7 @@ func (a *Acceptor) Accept(req types.AcceptRequest, res *types.AcceptResponse) er
 		a.accepted = true
 		a.acceptNum = req.N
 		a.acceptValue = req.V
+		a.value = req.V
 	} else {
 		res.Status = false
 		res.N = -1
