@@ -10,6 +10,7 @@ import (
 const MAX_RETRY = 3
 
 type Proposer struct {
+	id              int
 	currProposalNum int
 	value           string
 	addr            string
@@ -25,12 +26,15 @@ func NewProposer(id int, addr string, acceptors []paxos.AcceptorInterface, numPr
 		addr:            addr,
 		acceptors:       acceptors,
 		numProposers:    numProposers,
+		id:              id,
 	}
 
 	return p
 }
 
 func (p *Proposer) Set(value string, ret *bool) error {
+
+	fmt.Printf("[Proposer:Set] Proposer %d got value %s\n", p.id, value)
 
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -41,7 +45,7 @@ func (p *Proposer) Set(value string, ret *bool) error {
 		*ret = false
 		return err
 	}
-
+	fmt.Printf("[Proposer:Set] CONSENSUS\n")
 	p.value = value
 	*ret = true
 	return nil
@@ -58,43 +62,55 @@ func (p *Proposer) Get(key string, value *string) error {
 
 func (p *Proposer) doConsensus(value string, retry int) error {
 
+	fmt.Printf("[Proposer:doConsensus] Performing Consensus for values %s, retry %d\n", value, retry+1)
 	if retry == MAX_RETRY {
 		return fmt.Errorf("Too many retries")
 	}
 
-	prepareReq := types.PrepareRequest{p.getNextProposalNumber(), value}
+	proposalNum := p.getNextProposalNumber()
+	prepareReq := types.PrepareRequest{proposalNum, value}
 	nPromises := 0
+	fmt.Printf("[Proposer:doConsensus] Proposal Number: %d\n", proposalNum)
 
 	// Phase-1: PREPARE
-	for _, acceptor := range p.acceptors {
+	fmt.Printf("[Proposer:doConsensus] PREPARE\n")
+	for i, acceptor := range p.acceptors {
 		var prepareRes types.PrepareResponse
 		var proposalNum int
 		err := acceptor.Prepare(prepareReq, &prepareRes)
 		if err == nil && prepareRes.Status {
+			fmt.Printf("[Proposer:doConsensus] Response from acceptor %d: %+v\n", i, prepareRes)
 			nPromises++
 			if prepareRes.PrevAccepted {
 				if prepareRes.Proposal.N > proposalNum {
+					fmt.Printf("[Proposer:doConsensus] acceptor %d had previously accepted larger proposalNum: %d, value: %s\n", i, prepareRes.Proposal.N, prepareRes.Proposal.V)
 					value = prepareRes.Proposal.V
 				}
 			}
 
 		}
-
 	}
+
+	fmt.Printf("[Proposer:doConsensus] Got %d promises\n", nPromises)
 
 	//Check majority promises
 	if nPromises >= int(len(p.acceptors)/2)+1 {
+		fmt.Printf("[Proposer:doConsensus] ACCEPT\n")
 		// Phase-2: Accept
 		acceptReq := types.AcceptRequest{prepareReq.N, value}
 		var acceptRes types.AcceptResponse
 		var nAccepts int
+
+		fmt.Printf("[Proposer:doConsensus] Informing Acceptors\n")
 		for _, acceptor := range p.acceptors {
 			err := acceptor.Accept(acceptReq, &acceptRes)
 			if err == nil && acceptRes.Status {
 				nAccepts++
 			}
 		}
+		fmt.Printf("[Proposer:doConsensus] nAccepts: %d\n", nAccepts)
 	} else {
+		fmt.Printf("[Proposer:doConsensus] RETRY\n")
 		p.doConsensus(value, retry+1)
 	}
 	return nil
