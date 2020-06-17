@@ -32,7 +32,6 @@ func NewProposer(id int, addr string, acceptors []paxos.AcceptorInterface, numPr
 
 func (p *Proposer) Set(value string, ret *bool) error {
 
-	//lock using per-key lock
 	p.lock.Lock()
 	defer p.lock.Unlock()
 

@@ -15,6 +15,12 @@ type ProposerConfig struct {
 	Ready    chan bool
 }
 
+type AcceptorConfig struct {
+	Addr     string
+	Acceptor paxos.AcceptorInterface
+	Ready    chan bool
+}
+
 type PaxosConfig struct {
 	Frontends []string
 	Proposers []string
@@ -26,6 +32,14 @@ func (pc *PaxosConfig) NewProposerConfig(i int, p paxos.ProposerInterface) *Prop
 	ret := new(ProposerConfig)
 	ret.Addr = pc.Proposers[i]
 	ret.Proposer = p
+	ret.Ready = make(chan bool, 1)
+	return ret
+}
+
+func (pc *PaxosConfig) NewAcceptorConfig(i int, a paxos.AcceptorInterface) *AcceptorConfig {
+	ret := new(AcceptorConfig)
+	ret.Addr = pc.Acceptors[i]
+	ret.Acceptor = a
 	ret.Ready = make(chan bool, 1)
 	return ret
 }
