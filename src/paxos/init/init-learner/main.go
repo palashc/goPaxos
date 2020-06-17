@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"paxos"
-	"paxos/acceptor"
 	"paxos/config"
 	"paxos/learner"
 )
@@ -13,7 +11,7 @@ import (
 var frc = flag.String("conf", config.DefaultConfigPath, "config file")
 
 // if -1, run all workers
-var pid = flag.Int("pid", -1, "which proposer to run")
+var pid = flag.Int("pid", -1, "which learner to run")
 
 func noError(e error) {
 	if e != nil {
@@ -27,27 +25,22 @@ func main() {
 	rc, e := config.LoadConfig(*frc)
 	noError(e)
 
-	learners := []paxos.LearnerInterface{}
-	for _, lAddr := range rc.Learners {
-		learners = append(learners, learner.GetNewLearnerClient(lAddr))
-	}
-
 	run := func(i int) {
-		if i > len(rc.Acceptors) {
+		if i > len(rc.Learners) {
 			noError(fmt.Errorf("index out of range: %d", i))
 		}
 
-		aAddr := rc.Acceptors[i]
-		aConfig := rc.NewAcceptorConfig(i, acceptor.NewAcceptor(i, aAddr, learners))
+		lAddr := rc.Learners[i]
+		lConfig := rc.NewLearnerConfig(i, learner.NewLearner(i, lAddr))
 
-		log.Printf("monitor serving on %s", aConfig.Addr)
+		log.Printf("monitor serving on %s", lConfig.Addr)
 
-		noError(acceptor.Serve(aConfig))
+		noError(learner.Serve(lConfig))
 	}
 
 	// run all monitors
 	if *pid == -1 {
-		for i, _ := range rc.Acceptors {
+		for i, _ := range rc.Learners {
 			go run(i)
 		}
 	} else {

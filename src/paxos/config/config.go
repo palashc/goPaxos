@@ -21,6 +21,12 @@ type AcceptorConfig struct {
 	Ready    chan bool
 }
 
+type LearnerConfig struct {
+	Addr    string
+	Learner paxos.LearnerInterface
+	Ready   chan bool
+}
+
 type PaxosConfig struct {
 	Frontends []string
 	Proposers []string
@@ -40,6 +46,14 @@ func (pc *PaxosConfig) NewAcceptorConfig(i int, a paxos.AcceptorInterface) *Acce
 	ret := new(AcceptorConfig)
 	ret.Addr = pc.Acceptors[i]
 	ret.Acceptor = a
+	ret.Ready = make(chan bool, 1)
+	return ret
+}
+
+func (pc *PaxosConfig) NewLearnerConfig(i int, a paxos.LearnerInterface) *LearnerConfig {
+	ret := new(LearnerConfig)
+	ret.Addr = pc.Learners[i]
+	ret.Learner = a
 	ret.Ready = make(chan bool, 1)
 	return ret
 }
