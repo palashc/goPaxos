@@ -1,6 +1,9 @@
 package learner
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type Learner struct {
 	lock  sync.Mutex
@@ -24,6 +27,7 @@ func (l *Learner) Notify(value string, ret *bool) error {
 	l.lock.Lock()
 	defer l.lock.Unlock()
 
+	fmt.Printf("[Learner:Notify] Got notified of value: %s\n", value)
 	*ret = true
 	l.value = value
 
