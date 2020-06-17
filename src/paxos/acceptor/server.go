@@ -7,7 +7,6 @@ import (
 	"paxos/config"
 )
 
-// Serve as a backend based on the given configuration
 func Serve(b *config.AcceptorConfig) error {
 
 	server := rpc.NewServer()

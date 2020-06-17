@@ -42,6 +42,12 @@ func main() {
 			paxosConfig.Acceptors[i] = fmt.Sprintf("%s:%d", host, p)
 			p++
 		}
+
+		for i := 0; i < *nLearners; i++ {
+			host := fmt.Sprintf("%s", ipAddrs[i%nMachine])
+			paxosConfig.Learners[i] = fmt.Sprintf("%s:%d", host, p)
+			p++
+		}
 	}
 
 	fmt.Println(paxosConfig.String())

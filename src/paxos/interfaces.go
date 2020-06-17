@@ -14,6 +14,7 @@ type AcceptorInterface interface {
 }
 
 type LearnerInterface interface {
+	Notify(value string, ret *bool) error
 }
 
 type KV interface {
