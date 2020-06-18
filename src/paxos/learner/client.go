@@ -45,3 +45,18 @@ func (lc *LearnerClient) Notify(value string, ret *bool) error {
 
 	return nil
 }
+
+func (lc *LearnerClient) Get(key string, value *string) error {
+
+	err := lc.rpcConn()
+	if err != nil {
+		return err
+	}
+
+	err = lc.conn.Call("Learner.Get", key, value)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
