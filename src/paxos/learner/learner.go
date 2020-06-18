@@ -33,3 +33,12 @@ func (l *Learner) Notify(value string, ret *bool) error {
 
 	return nil
 }
+
+func (l *Learner) Get(key string, value *string) error {
+
+	l.lock.Lock()
+	defer l.lock.Unlock()
+
+	*value = l.value
+	return nil
+}
