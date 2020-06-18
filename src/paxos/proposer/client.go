@@ -11,7 +11,7 @@ type ProposerClient struct {
 	lock sync.Mutex
 }
 
-func GetNewClient(addr string) *ProposerClient {
+func GetNewProposerClient(addr string) *ProposerClient {
 	return &ProposerClient{Addr: addr}
 }
 
